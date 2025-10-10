@@ -1,0 +1,11 @@
+# YouTube channels to capture thumbnails from
+# One channel per line
+# Lines starting with # are comments and will be ignored
+# Empty lines are also ignored
+
+@DreamToneRealm
+@moebiusfm
+@NOXORAMUSIC
+@synthodysseyfm
+@veltrixfm
+@VHSFMMemory
