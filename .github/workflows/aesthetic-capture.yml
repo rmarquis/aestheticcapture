@@ -45,13 +45,19 @@ jobs:
         working-directory: main-repo
         run: |
           if [ -n "${{ secrets.YOUTUBE_COOKIES }}" ]; then
-            # Use printf to avoid echo interpreting escape sequences and adding extra newlines
-            printf '%s\n' "${{ secrets.YOUTUBE_COOKIES }}" > cookies.txt
+            # Use printf to preserve exact cookie content without adding extra newlines
+            printf '%s' "${{ secrets.YOUTUBE_COOKIES }}" > cookies.txt
             echo "Cookies file created"
             echo "Cookie file size: $(wc -c < cookies.txt) bytes"
             echo "Cookie file lines: $(wc -l < cookies.txt) lines"
             # Show first line (should be Netscape cookie file header)
             echo "First line: $(head -n 1 cookies.txt)"
+            # Validate cookies file format
+            if grep -q "^# Netscape HTTP Cookie File" cookies.txt || grep -q "^# HTTP Cookie File" cookies.txt; then
+              echo "Valid Netscape cookie format detected"
+            else
+              echo "WARNING: Cookie file may not be in Netscape format"
+            fi
           else
             echo "No cookies secret found - bot detection may block some videos"
           fi
