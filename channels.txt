@@ -3,9 +3,37 @@
 # Lines starting with # are comments and will be ignored
 # Empty lines are also ignored
 
+@AeternumOne
+@afterloopfm
+@AlanGsouls
+@AnalogSoulFM
+@BrainDanceSynth
+@CassetteInvaders
+@Cyber_City_Moods
+@DARKSECTOR-p7x
 @DreamToneRealm
+@dream_wavefm
+@ElectricDawn-n1q
+@ICENGINE-g7p
+@HyperSoundDrive
+@LunarwaveSound
 @moebiusfm
-@NOXORAMUSIC
+@NeoncoreFM
+@NEURAFX
+@NightwaveStation
+@@NorthStarFM
+@Noxruin
+@OuroborosFM
+#@Retroflow1985
+@RetroWaveRecords-j1g
+@Rio2077FM
+@rta-b1s
+@Shadowslinke
+@silvernetmusic-u7y
+@slashsynth
 @synthodysseyfm
+@SYNTH808FM
 @veltrixfm
 @VHSFMMemory
+@Zyykronsound
+
