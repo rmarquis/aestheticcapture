@@ -128,6 +128,9 @@ def download_thumbnail(video_id, video_title, output_dir, index, cookies_file=No
         output_dir: Directory to save the thumbnail
         index: Index number for filename
         cookies_file: Optional path to cookies file for authentication
+
+    Returns:
+        str: Status of the download - 'existing', 'new', or 'failed'
     """
     # Sanitize the title for use in filename
     safe_title = sanitize_filename(video_title)
@@ -140,7 +143,7 @@ def download_thumbnail(video_id, video_title, output_dir, index, cookies_file=No
         output_path = os.path.join(output_dir, f"{base_filename}{ext}")
         if os.path.exists(output_path):
             print(f"  Skipping (already exists): {base_filename}{ext}")
-            return True
+            return 'existing'
 
     print(f"  Downloading: {base_filename}")
     output_path = os.path.join(output_dir, f"{base_filename}.jpg")
@@ -177,7 +180,7 @@ def download_thumbnail(video_id, video_title, output_dir, index, cookies_file=No
             print(f"  ✗ Failed to download thumbnail: {base_filename}")
             if result.stderr:
                 print(f"    Error: {result.stderr}")
-            return False
+            return 'failed'
 
         # Find the downloaded thumbnail file (could be .jpg, .webp, .png, etc.)
         # Check for common thumbnail extensions
@@ -190,21 +193,21 @@ def download_thumbnail(video_id, video_title, output_dir, index, cookies_file=No
 
         if not temp_thumb_path:
             print(f"  ✗ Thumbnail file not found: {base_filename}")
-            return False
+            return 'failed'
 
         # Rename to final filename (keep original extension)
         _, ext = os.path.splitext(temp_thumb_path)
         final_output = os.path.join(output_dir, f"{base_filename}{ext}")
         os.rename(temp_thumb_path, final_output)
         print(f"  ✓ Downloaded: {os.path.basename(final_output)}")
-        return True
+        return 'new'
 
     except subprocess.TimeoutExpired:
         print(f"  ✗ Timeout downloading {base_filename}")
-        return False
+        return 'failed'
     except Exception as e:
         print(f"  ✗ Error downloading {base_filename}: {e}")
-        return False
+        return 'failed'
 
 
 def main():
@@ -227,8 +230,11 @@ def main():
     print(f"Loaded {len(YOUTUBE_CHANNELS)} channel(s) from config")
     print()
 
-    total_success = 0
-    total_videos_count = 0
+    # Track overall statistics
+    total_new = 0
+    total_existing = 0
+    total_failed = 0
+    channel_stats = []
 
     # Process each channel
     for channel_num, channel in enumerate(YOUTUBE_CHANNELS, start=1):
@@ -257,27 +263,67 @@ def main():
         # Download thumbnails of each video
         # Videos are newest-to-oldest, but we number chronologically (oldest=0000)
         total_videos = len(videos)
-        channel_success = 0
+        channel_new = 0
+        channel_existing = 0
+        channel_failed = 0
+
         for loop_index, video in enumerate(videos):
             # Calculate chronological index (oldest=0000, newest=highest)
             file_index = (total_videos - 1) - loop_index
 
             print(f"[{loop_index+1}/{total_videos}] {video['title']}")
 
-            if download_thumbnail(video['id'], video['title'], channel_output_dir, file_index, cookies_file):
-                channel_success += 1
+            status = download_thumbnail(video['id'], video['title'], channel_output_dir, file_index, cookies_file)
+            if status == 'new':
+                channel_new += 1
+            elif status == 'existing':
+                channel_existing += 1
+            elif status == 'failed':
+                channel_failed += 1
 
-        total_success += channel_success
-        total_videos_count += len(videos)
+        # Update totals
+        total_new += channel_new
+        total_existing += channel_existing
+        total_failed += channel_failed
 
-        print(f"\nChannel {channel} complete: {channel_success}/{len(videos)} successful")
+        # Store channel statistics
+        channel_stats.append({
+            'name': channel,
+            'total': len(videos),
+            'new': channel_new,
+            'existing': channel_existing,
+            'failed': channel_failed
+        })
+
+        print(f"\nChannel {channel} complete:")
+        print(f"  Total videos: {len(videos)}")
+        print(f"  New downloads: {channel_new}")
+        print(f"  Already existing: {channel_existing}")
+        print(f"  Failed: {channel_failed}")
 
     print()
     print("=" * 60)
     print(f"All downloads complete!")
-    print(f"Processed {len(YOUTUBE_CHANNELS)} channel(s)")
-    print(f"Successfully downloaded: {total_success}/{total_videos_count}")
     print("=" * 60)
+    print(f"\nProcessed {len(YOUTUBE_CHANNELS)} channel(s)\n")
+
+    # Display per-channel summary as a table
+    print("Per-Channel Summary:")
+    print("-" * 80)
+    print(f"{'Channel':<30} {'Total':>8} {'New':>8} {'Existing':>10} {'Failed':>8}")
+    print("-" * 80)
+    for stats in channel_stats:
+        channel_name = stats['name']
+        # Truncate long channel names
+        if len(channel_name) > 28:
+            channel_name = channel_name[:25] + "..."
+        print(f"{channel_name:<30} {stats['total']:>8d} {stats['new']:>8d} {stats['existing']:>10d} {stats['failed']:>8d}")
+
+    # Display overall summary
+    total_videos = total_new + total_existing + total_failed
+    print("-" * 80)
+    print(f"{'TOTAL':<30} {total_videos:>8d} {total_new:>8d} {total_existing:>10d} {total_failed:>8d}")
+    print("=" * 80)
 
 
 if __name__ == '__main__':
